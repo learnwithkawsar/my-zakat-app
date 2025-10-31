@@ -1,0 +1,80 @@
+@startuml PersonalZakatLedgerFinal
+
+!theme plain
+
+entity "Borrower" as Borrower {
+  * BorrowerId : UUID
+  --
+  Name : String
+  ContactInfo : String
+  Address : String
+  Notes : Text
+}
+
+entity "LoanTransaction" as LoanTransaction {
+  * LoanTransactionId : UUID
+  --
+  BorrowerId : UUID
+  TransactionDate : Date
+  Amount : Decimal
+  TransactionType : Enum(Disbursement, Repayment)
+  Notes : Text
+}
+
+entity "Asset" as Asset {
+  * AssetId : UUID
+  --
+  Name : String
+  Category : String
+  Value : Decimal
+  AcquiredDate : Date
+  Remarks : Text
+}
+
+entity "Liability" as Liability {
+  * LiabilityId : UUID
+  --
+  Name : String
+  Category : String
+  Amount : Decimal
+  DueDate : Date
+  Remarks : Text
+}
+
+entity "ZakatSnapshot" as ZakatSnapshot {
+  * SnapshotId : UUID
+  --
+  CalculationDate : Date
+  TotalAssets : Decimal
+  TotalLiabilities : Decimal
+  TotalLoanOutstanding : Decimal
+  NetZakatableAmount : Decimal
+  ZakatDue : Decimal
+  Remarks : Text
+}
+
+entity "Beneficiary" as Beneficiary {
+  * BeneficiaryId : UUID
+  --
+  Name : String
+  ContactInfo : String
+  Category : String
+  Remarks : Text
+}
+
+entity "ZakatDisbursement" as ZakatDisbursement {
+  * ZakatDisbursementId : UUID
+  --
+  SnapshotId : UUID
+  BeneficiaryId : UUID
+  Amount : Decimal
+  DisbursementDate : Date
+  Remarks : Text
+}
+
+' Relationships
+Borrower ||--o{ LoanTransaction : has
+ZakatSnapshot ||--o{ ZakatDisbursement : generates
+Beneficiary ||--o{ ZakatDisbursement : receives
+
+@enduml
