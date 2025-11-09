@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'asset_model.g.dart';
 
+@HiveType(typeId: 9)
 enum AssetType {
   @HiveField(0)
   cash,
@@ -44,6 +45,9 @@ class AssetModel extends HiveObject {
   @HiveField(6)
   String? notes;
 
+  @HiveField(9)
+  double? weightInGrams; // For gold and silver assets
+
   @HiveField(7)
   DateTime createdAt;
 
@@ -58,6 +62,7 @@ class AssetModel extends HiveObject {
     required this.currency,
     required this.valuationDate,
     this.notes,
+    this.weightInGrams, // Optional: weight in grams for gold/silver
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -72,6 +77,7 @@ class AssetModel extends HiveObject {
       'currency': currency,
       'valuationDate': valuationDate.toIso8601String(),
       'notes': notes,
+      'weightInGrams': weightInGrams,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -89,6 +95,9 @@ class AssetModel extends HiveObject {
       currency: json['currency'],
       valuationDate: DateTime.parse(json['valuationDate']),
       notes: json['notes'],
+      weightInGrams: json['weightInGrams'] != null
+          ? (json['weightInGrams'] as num).toDouble()
+          : null,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
@@ -102,6 +111,7 @@ class AssetModel extends HiveObject {
     String? currency,
     DateTime? valuationDate,
     String? notes,
+    double? weightInGrams,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -113,6 +123,7 @@ class AssetModel extends HiveObject {
       currency: currency ?? this.currency,
       valuationDate: valuationDate ?? this.valuationDate,
       notes: notes ?? this.notes,
+      weightInGrams: weightInGrams ?? this.weightInGrams,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );

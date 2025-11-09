@@ -69,3 +69,42 @@ class LiabilityModelAdapter extends TypeAdapter<LiabilityModel> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
+
+class LiabilityTypeAdapter extends TypeAdapter<LiabilityType> {
+  @override
+  final int typeId = 10;
+
+  @override
+  LiabilityType read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return LiabilityType.shortTerm;
+      case 1:
+        return LiabilityType.longTerm;
+      default:
+        return LiabilityType.shortTerm;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, LiabilityType obj) {
+    switch (obj) {
+      case LiabilityType.shortTerm:
+        writer.writeByte(0);
+        break;
+      case LiabilityType.longTerm:
+        writer.writeByte(1);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LiabilityTypeAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}

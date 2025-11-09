@@ -253,12 +253,45 @@ class _AddBorrowerPaymentScreenState extends State<AddBorrowerPaymentScreen> {
                 onTap: () {
                   Get.bottomSheet(
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Get.theme.scaffoldBackgroundColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, -5),
+                          ),
+                        ],
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          Container(
+                            margin: const EdgeInsets.only(top: 12, bottom: 8),
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Get.theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Text(
+                              'Select Payment Type',
+                              style: Get.theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const Divider(),
                           ListTile(
+                            leading: const Icon(Icons.money),
                             title: const Text('Cash'),
+                            trailing: _paymentType == 'Cash'
+                                ? Icon(Icons.check_circle, color: Get.theme.colorScheme.primary)
+                                : null,
                             onTap: () {
                               setState(() {
                                 _paymentType = 'Cash';
@@ -267,7 +300,11 @@ class _AddBorrowerPaymentScreenState extends State<AddBorrowerPaymentScreen> {
                             },
                           ),
                           ListTile(
+                            leading: const Icon(Icons.account_balance),
                             title: const Text('Bank Transfer'),
+                            trailing: _paymentType == 'Bank Transfer'
+                                ? Icon(Icons.check_circle, color: Get.theme.colorScheme.primary)
+                                : null,
                             onTap: () {
                               setState(() {
                                 _paymentType = 'Bank Transfer';
@@ -276,7 +313,11 @@ class _AddBorrowerPaymentScreenState extends State<AddBorrowerPaymentScreen> {
                             },
                           ),
                           ListTile(
+                            leading: const Icon(Icons.description),
                             title: const Text('Check'),
+                            trailing: _paymentType == 'Check'
+                                ? Icon(Icons.check_circle, color: Get.theme.colorScheme.primary)
+                                : null,
                             onTap: () {
                               setState(() {
                                 _paymentType = 'Check';
@@ -285,7 +326,11 @@ class _AddBorrowerPaymentScreenState extends State<AddBorrowerPaymentScreen> {
                             },
                           ),
                           ListTile(
+                            leading: const Icon(Icons.more_horiz),
                             title: const Text('Other'),
+                            trailing: _paymentType == 'Other'
+                                ? Icon(Icons.check_circle, color: Get.theme.colorScheme.primary)
+                                : null,
                             onTap: () {
                               setState(() {
                                 _paymentType = 'Other';
@@ -293,8 +338,13 @@ class _AddBorrowerPaymentScreenState extends State<AddBorrowerPaymentScreen> {
                               Get.back();
                             },
                           ),
+                          const Divider(),
                           ListTile(
-                            title: const Text('Clear'),
+                            leading: Icon(Icons.clear, color: Get.theme.colorScheme.error),
+                            title: Text(
+                              'Clear',
+                              style: TextStyle(color: Get.theme.colorScheme.error),
+                            ),
                             onTap: () {
                               setState(() {
                                 _paymentType = null;
@@ -302,9 +352,12 @@ class _AddBorrowerPaymentScreenState extends State<AddBorrowerPaymentScreen> {
                               Get.back();
                             },
                           ),
+                          SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
                         ],
                       ),
                     ),
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
                   );
                 },
               ),

@@ -66,6 +66,12 @@ class DatabaseService {
     if (!Hive.isAdapterRegistered(8)) {
       Hive.registerAdapter(SettingsModelAdapter());
     }
+    if (!Hive.isAdapterRegistered(9)) {
+      Hive.registerAdapter(AssetTypeAdapter());
+    }
+    if (!Hive.isAdapterRegistered(10)) {
+      Hive.registerAdapter(LiabilityTypeAdapter());
+    }
 
     // Open boxes
     _borrowersBox = await Hive.openBox<BorrowerModel>(_borrowersBoxName);
@@ -76,7 +82,15 @@ class DatabaseService {
     _beneficiariesBox = await Hive.openBox<BeneficiaryModel>(_beneficiariesBoxName);
     _zakatRecordsBox = await Hive.openBox<ZakatRecordModel>(_zakatRecordsBoxName);
     _snapshotsBox = await Hive.openBox<SnapshotModel>(_snapshotsBoxName);
-    _settingsBox = await Hive.openBox<SettingsModel>(_settingsBoxName);
+    
+    // Handle settings box migration
+    try {
+      _settingsBox = await Hive.openBox<SettingsModel>(_settingsBoxName);
+    } catch (e) {
+      // If schema mismatch, delete and recreate the box
+      await Hive.deleteBoxFromDisk(_settingsBoxName);
+      _settingsBox = await Hive.openBox<SettingsModel>(_settingsBoxName);
+    }
 
     // Initialize default settings if not exists
     await _initializeDefaultSettings();

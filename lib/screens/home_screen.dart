@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../modules/borrower/screens/borrower_list_screen.dart';
 import '../modules/loan/screens/loan_list_screen.dart';
+import '../modules/asset/screens/asset_list_screen.dart';
+import '../modules/liability/screens/liability_list_screen.dart';
+import '../modules/beneficiary/screens/beneficiary_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -70,19 +73,35 @@ class HomeScreen extends StatelessWidget {
                   },
                 ),
                 _buildActionCard(
+                  icon: Icons.account_balance,
+                  title: 'Assets',
+                  color: Colors.green,
+                  onTap: () {
+                    Get.to(() => const AssetListScreen());
+                  },
+                ),
+                _buildActionCard(
+                  icon: Icons.credit_card,
+                  title: 'Liabilities',
+                  color: Colors.red,
+                  onTap: () {
+                    Get.to(() => const LiabilityListScreen());
+                  },
+                ),
+                _buildActionCard(
+                  icon: Icons.people,
+                  title: 'Beneficiaries',
+                  color: Colors.purple,
+                  onTap: () {
+                    Get.to(() => const BeneficiaryListScreen());
+                  },
+                ),
+                _buildActionCard(
                   icon: Icons.calculate,
                   title: 'Calculate Zakat',
                   color: Get.theme.colorScheme.tertiary,
                   onTap: () {
                     // Navigate to calculator
-                  },
-                ),
-                _buildActionCard(
-                  icon: Icons.history,
-                  title: 'View History',
-                  color: Get.theme.colorScheme.primaryContainer,
-                  onTap: () {
-                    // Navigate to history
                   },
                 ),
               ],

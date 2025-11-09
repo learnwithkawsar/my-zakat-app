@@ -25,6 +25,12 @@ class SettingsModel extends HiveObject {
   @HiveField(6)
   DateTime updatedAt;
 
+  @HiveField(7)
+  double goldPricePerGram;
+
+  @HiveField(8)
+  double silverPricePerGram;
+
   SettingsModel({
     this.currency = 'BDT',
     this.zakatRate = 2.5,
@@ -32,6 +38,8 @@ class SettingsModel extends HiveObject {
     this.reminderDate,
     this.useBiometric = false,
     this.autoLockTimeoutMinutes = 5,
+    this.goldPricePerGram = 0.0,
+    this.silverPricePerGram = 0.0,
     DateTime? updatedAt,
   }) : updatedAt = updatedAt ?? DateTime.now();
 
@@ -43,6 +51,8 @@ class SettingsModel extends HiveObject {
       'reminderDate': reminderDate?.toIso8601String(),
       'useBiometric': useBiometric,
       'autoLockTimeoutMinutes': autoLockTimeoutMinutes,
+      'goldPricePerGram': goldPricePerGram,
+      'silverPricePerGram': silverPricePerGram,
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
@@ -57,6 +67,8 @@ class SettingsModel extends HiveObject {
           : null,
       useBiometric: json['useBiometric'] ?? false,
       autoLockTimeoutMinutes: json['autoLockTimeoutMinutes'] ?? 5,
+      goldPricePerGram: (json['goldPricePerGram'] as num?)?.toDouble() ?? 0.0,
+      silverPricePerGram: (json['silverPricePerGram'] as num?)?.toDouble() ?? 0.0,
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
@@ -70,6 +82,8 @@ class SettingsModel extends HiveObject {
     DateTime? reminderDate,
     bool? useBiometric,
     int? autoLockTimeoutMinutes,
+    double? goldPricePerGram,
+    double? silverPricePerGram,
     DateTime? updatedAt,
   }) {
     return SettingsModel(
@@ -79,6 +93,8 @@ class SettingsModel extends HiveObject {
       reminderDate: reminderDate ?? this.reminderDate,
       useBiometric: useBiometric ?? this.useBiometric,
       autoLockTimeoutMinutes: autoLockTimeoutMinutes ?? this.autoLockTimeoutMinutes,
+      goldPricePerGram: goldPricePerGram ?? this.goldPricePerGram,
+      silverPricePerGram: silverPricePerGram ?? this.silverPricePerGram,
       updatedAt: updatedAt ?? DateTime.now(),
     );
   }

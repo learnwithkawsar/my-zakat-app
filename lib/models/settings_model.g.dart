@@ -23,6 +23,8 @@ class SettingsModelAdapter extends TypeAdapter<SettingsModel> {
       reminderDate: fields[3] as DateTime?,
       useBiometric: fields[4] as bool,
       autoLockTimeoutMinutes: fields[5] as int,
+      goldPricePerGram: (fields[7] as double?) ?? 0.0,
+      silverPricePerGram: (fields[8] as double?) ?? 0.0,
       updatedAt: fields[6] as DateTime?,
     );
   }
@@ -30,7 +32,7 @@ class SettingsModelAdapter extends TypeAdapter<SettingsModel> {
   @override
   void write(BinaryWriter writer, SettingsModel obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.currency)
       ..writeByte(1)
@@ -44,7 +46,11 @@ class SettingsModelAdapter extends TypeAdapter<SettingsModel> {
       ..writeByte(5)
       ..write(obj.autoLockTimeoutMinutes)
       ..writeByte(6)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(7)
+      ..write(obj.goldPricePerGram)
+      ..writeByte(8)
+      ..write(obj.silverPricePerGram);
   }
 
   @override

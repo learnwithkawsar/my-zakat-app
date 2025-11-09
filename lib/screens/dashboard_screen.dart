@@ -8,6 +8,10 @@ import 'profile_screen.dart';
 import 'login_screen.dart';
 import '../modules/borrower/screens/borrower_list_screen.dart';
 import '../modules/loan/screens/loan_list_screen.dart';
+import '../modules/asset/screens/asset_list_screen.dart';
+import '../modules/liability/screens/liability_list_screen.dart';
+import '../modules/beneficiary/screens/beneficiary_list_screen.dart';
+import '../modules/settings/screens/settings_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({super.key});
@@ -154,15 +158,36 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const Divider(),
                 _buildDrawerItem(
+                  icon: Icons.account_balance,
+                  title: 'Assets',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(() => const AssetListScreen());
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.credit_card,
+                  title: 'Liabilities',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(() => const LiabilityListScreen());
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.people,
+                  title: 'Beneficiaries',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(() => const BeneficiaryListScreen());
+                  },
+                ),
+                const Divider(),
+                _buildDrawerItem(
                   icon: Icons.settings,
                   title: 'Settings',
                   onTap: () {
                     Navigator.pop(context);
-                    Get.snackbar(
-                      'Settings',
-                      'Settings screen coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
+                    Get.to(() => const SettingsScreen());
                   },
                 ),
                 _buildDrawerItem(

@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'liability_model.g.dart';
 
+@HiveType(typeId: 10)
 enum LiabilityType {
   @HiveField(0)
   shortTerm,
