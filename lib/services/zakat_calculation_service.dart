@@ -104,5 +104,43 @@ class ZakatCalculationService {
     final currentYear = getCurrentZakatYear();
     return await calculateZakatForYear(year: currentYear, notes: notes);
   }
+
+  /// Create a zakat year record without calculating zakat
+  /// This creates an empty record that can be calculated later
+  static Future<ZakatRecordModel> createZakatYearWithoutCalculation({
+    required String name,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? notes,
+  }) async {
+    // Check if record already exists for this date range
+    final existingRecord = DatabaseService.getZakatRecordByDateRange(
+      startDate: startDate,
+      endDate: endDate,
+    );
+    
+    if (existingRecord != null) {
+      return existingRecord;
+    }
+
+    // Create new record with zero values (not calculated yet)
+    final record = ZakatRecordModel(
+      id: DatabaseService.generateId(),
+      calculationDate: startDate, // Use start date as placeholder
+      zakatYearStart: startDate,
+      zakatYearEnd: endDate,
+      assetsTotal: 0.0,
+      receivablesTotal: 0.0,
+      liabilitiesTotal: 0.0,
+      netZakatableAmount: 0.0,
+      zakatDue: 0.0,
+      amountPaid: 0.0,
+      isCurrent: false,
+      notes: notes,
+      name: name,
+    );
+    await DatabaseService.addZakatRecord(record);
+    return record;
+  }
 }
 

@@ -292,167 +292,226 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> {
                   ),
                 ],
                 if (record != null) ...[
-                  const SizedBox(height: 16),
-                  // Breakdown Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Calculation Breakdown',
-                            style: Get.theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildBreakdownRow(
-                            'Total Assets',
-                            record.assetsTotal,
-                            Icons.account_balance_wallet,
-                            Colors.green,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildBreakdownRow(
-                            'Total Receivables',
-                            record.receivablesTotal,
-                            Icons.receipt_long,
-                            Colors.blue,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildBreakdownRow(
-                            'Total Liabilities',
-                            record.liabilitiesTotal,
-                            Icons.credit_card,
-                            Colors.red,
-                            isNegative: true,
-                          ),
-                          const Divider(height: 32),
-                          _buildBreakdownRow(
-                            'Net Zakatable Amount',
-                            record.netZakatableAmount,
-                            Icons.calculate,
-                            Get.theme.colorScheme.primary,
-                            isBold: true,
-                          ),
-                          const SizedBox(height: 8),
-                          if (record.netZakatableAmount < settings.nisab)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.shade100,
-                                borderRadius: BorderRadius.circular(8),
+                  // Only show breakdown and zakat due if zakat has been calculated
+                  if (record.isCalculated) ...[
+                    const SizedBox(height: 16),
+                    // Breakdown Card
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Calculation Breakdown',
+                              style: Get.theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.info_outline, color: Colors.orange.shade900),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Below nisab threshold (${NumberFormat('#,##0.00').format(settings.nisab)} ${settings.currency})',
-                                      style: TextStyle(
-                                        color: Colors.orange.shade900,
-                                        fontSize: 12,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildBreakdownRow(
+                              'Total Assets',
+                              record.assetsTotal,
+                              Icons.account_balance_wallet,
+                              Colors.green,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildBreakdownRow(
+                              'Total Receivables',
+                              record.receivablesTotal,
+                              Icons.receipt_long,
+                              Colors.blue,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildBreakdownRow(
+                              'Total Liabilities',
+                              record.liabilitiesTotal,
+                              Icons.credit_card,
+                              Colors.red,
+                              isNegative: true,
+                            ),
+                            const Divider(height: 32),
+                            _buildBreakdownRow(
+                              'Net Zakatable Amount',
+                              record.netZakatableAmount,
+                              Icons.calculate,
+                              Get.theme.colorScheme.primary,
+                              isBold: true,
+                            ),
+                            const SizedBox(height: 8),
+                            if (record.netZakatableAmount < settings.nisab)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.info_outline, color: Colors.orange.shade900),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Below nisab threshold (${NumberFormat('#,##0.00').format(settings.nisab)} ${settings.currency})',
+                                        style: TextStyle(
+                                          color: Colors.orange.shade900,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Zakat Due Card
+                    Card(
+                      color: Get.theme.colorScheme.secondaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Zakat Due',
+                              style: Get.theme.textTheme.titleMedium?.copyWith(
+                                color: Get.theme.colorScheme.onSecondaryContainer,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${NumberFormat('#,##0.00').format(record.zakatDue)} ${settings.currency}',
+                              style: Get.theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Get.theme.colorScheme.onSecondaryContainer,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Rate: ${settings.zakatRate}%',
+                              style: Get.theme.textTheme.bodySmall?.copyWith(
+                                color: Get.theme.colorScheme.onSecondaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Payment Status Card
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Payment Status',
+                                  style: Get.theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                ],
+                                ),
+                                if (record.isFullyPaid)
+                                  Chip(
+                                    label: const Text('Fully Paid'),
+                                    backgroundColor: Colors.green.shade100,
+                                    labelStyle: TextStyle(color: Colors.green.shade900),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _buildPaymentRow('Zakat Due', record.zakatDue),
+                            _buildPaymentRow('Amount Paid', record.amountPaid),
+                            const Divider(),
+                            _buildPaymentRow(
+                              'Balance',
+                              record.balance,
+                              isBold: true,
+                              color: record.balance > 0
+                                  ? Get.theme.colorScheme.error
+                                  : Get.theme.colorScheme.primary,
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Get.to(() => ZakatPaymentScreen(
+                                        zakatRecordId: record.id,
+                                        zakatYear: record.zakatYear,
+                                      ));
+                                },
+                                icon: const Icon(Icons.payment),
+                                label: const Text('Pay Zakat'),
                               ),
                             ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Zakat Due Card
-                  Card(
-                    color: Get.theme.colorScheme.secondaryContainer,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
+                  ] else ...[
+                    // Show message if zakat hasn't been calculated yet
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Get.theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Zakat Due',
-                            style: Get.theme.textTheme.titleMedium?.copyWith(
-                              color: Get.theme.colorScheme.onSecondaryContainer,
-                            ),
+                          Icon(
+                            Icons.calculate_outlined,
+                            size: 64,
+                            color: Get.theme.colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 16),
                           Text(
-                            '${NumberFormat('#,##0.00').format(record.zakatDue)} ${settings.currency}',
-                            style: Get.theme.textTheme.headlineMedium?.copyWith(
+                            'Zakat Not Calculated',
+                            style: Get.theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Get.theme.colorScheme.onSecondaryContainer,
+                              color: Get.theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Rate: ${settings.zakatRate}%',
-                            style: Get.theme.textTheme.bodySmall?.copyWith(
-                              color: Get.theme.colorScheme.onSecondaryContainer,
+                            'Please calculate zakat for this year to see the breakdown and zakat due amount.',
+                            textAlign: TextAlign.center,
+                            style: Get.theme.textTheme.bodyMedium?.copyWith(
+                              color: Get.theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Payment Status Card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Payment Status',
-                                style: Get.theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                          if (isCurrentYear) ...[
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: controller.isCalculating.value ? null : _calculateZakat,
+                                icon: controller.isCalculating.value
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.calculate),
+                                label: Text(
+                                  controller.isCalculating.value
+                                      ? 'Calculating...'
+                                      : 'Calculate Zakat',
                                 ),
                               ),
-                              if (record.isFullyPaid)
-                                Chip(
-                                  label: const Text('Fully Paid'),
-                                  backgroundColor: Colors.green.shade100,
-                                  labelStyle: TextStyle(color: Colors.green.shade900),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _buildPaymentRow('Zakat Due', record.zakatDue),
-                          _buildPaymentRow('Amount Paid', record.amountPaid),
-                          const Divider(),
-                          _buildPaymentRow(
-                            'Balance',
-                            record.balance,
-                            isBold: true,
-                            color: record.balance > 0
-                                ? Get.theme.colorScheme.error
-                                : Get.theme.colorScheme.primary,
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                Get.to(() => ZakatPaymentScreen(
-                                      zakatRecordId: record.id,
-                                      zakatYear: record.zakatYear,
-                                    ));
-                              },
-                              icon: const Icon(Icons.payment),
-                              label: const Text('Pay Zakat'),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 16),
                   // Notes Section
                   Card(
@@ -474,7 +533,7 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> {
                             maxLines: 3,
                           ),
                           const SizedBox(height: 8),
-                          if (isCurrentYear)
+                          if (isCurrentYear && record.isCalculated)
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(

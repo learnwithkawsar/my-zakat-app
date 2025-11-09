@@ -77,6 +77,23 @@ class ZakatRecordModel extends HiveObject {
   /// Get zakat year as string (returns name if available, otherwise year)
   String get zakatYear => name.isNotEmpty ? name : zakatYearStart.year.toString();
 
+  /// Check if zakat has been calculated for this year
+  /// Returns true if calculationDate is different from zakatYearStart (indicating calculation was done)
+  /// OR if any of the totals are non-zero
+  bool get isCalculated {
+    // If calculationDate is different from start date, it means calculation was done
+    // (when creating without calculation, we set calculationDate = zakatYearStart)
+    if (calculationDate != zakatYearStart) {
+      return true;
+    }
+    // Also check if any totals are non-zero (in case calculation resulted in all zeros)
+    // This handles edge case where calculation was done but all values are 0
+    return assetsTotal != 0.0 || 
+           receivablesTotal != 0.0 || 
+           liabilitiesTotal != 0.0 || 
+           zakatDue != 0.0;
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

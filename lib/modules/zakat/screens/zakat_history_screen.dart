@@ -82,7 +82,7 @@ class ZakatHistoryScreen extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                'Zakat Year ${record.zakatYear}',
+                                '${record.zakatYear}',
                                 style: Get.theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),

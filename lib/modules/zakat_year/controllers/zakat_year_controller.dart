@@ -76,8 +76,9 @@ class ZakatYearController extends GetxController {
         await _unmarkCurrentYear();
       }
 
-      // Create zakat year record with custom dates
-      final record = await ZakatCalculationService.calculateZakatForDateRange(
+      // Create zakat year record WITHOUT calculating zakat
+      // User must explicitly calculate zakat later
+      final record = await ZakatCalculationService.createZakatYearWithoutCalculation(
         name: name,
         startDate: startDate,
         endDate: endDate,
