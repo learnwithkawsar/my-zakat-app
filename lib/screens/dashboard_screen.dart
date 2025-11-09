@@ -6,6 +6,8 @@ import 'zakat_calculator_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
+import '../modules/borrower/screens/borrower_list_screen.dart';
+import '../modules/loan/screens/loan_list_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({super.key});
@@ -131,6 +133,23 @@ class DashboardScreen extends StatelessWidget {
                   onTap: () {
                     dashboardController.changeIndex(3);
                     Navigator.pop(context);
+                  },
+                ),
+                const Divider(),
+                _buildDrawerItem(
+                  icon: Icons.person,
+                  title: 'Borrowers',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(() => const BorrowerListScreen());
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.account_balance_wallet,
+                  title: 'Loans',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(() => const LoanListScreen());
                   },
                 ),
                 const Divider(),

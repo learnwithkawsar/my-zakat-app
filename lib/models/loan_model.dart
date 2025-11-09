@@ -2,13 +2,6 @@ import 'package:hive/hive.dart';
 
 part 'loan_model.g.dart';
 
-enum LoanStatus {
-  @HiveField(0)
-  active,
-  @HiveField(1)
-  closed,
-}
-
 @HiveType(typeId: 1)
 class LoanModel extends HiveObject {
   @HiveField(0)
@@ -27,21 +20,15 @@ class LoanModel extends HiveObject {
   DateTime? dueDate;
 
   @HiveField(5)
-  String currency;
-
-  @HiveField(6)
-  LoanStatus status;
-
-  @HiveField(7)
   String? notes;
 
-  @HiveField(8)
+  @HiveField(6)
   bool includeInZakat;
 
-  @HiveField(9)
+  @HiveField(7)
   DateTime createdAt;
 
-  @HiveField(10)
+  @HiveField(8)
   DateTime updatedAt;
 
   LoanModel({
@@ -50,8 +37,6 @@ class LoanModel extends HiveObject {
     required this.amount,
     required this.transactionDate,
     this.dueDate,
-    required this.currency,
-    this.status = LoanStatus.active,
     this.notes,
     this.includeInZakat = true,
     DateTime? createdAt,
@@ -66,8 +51,6 @@ class LoanModel extends HiveObject {
       'amount': amount,
       'transactionDate': transactionDate.toIso8601String(),
       'dueDate': dueDate?.toIso8601String(),
-      'currency': currency,
-      'status': status.name,
       'notes': notes,
       'includeInZakat': includeInZakat,
       'createdAt': createdAt.toIso8601String(),
@@ -82,11 +65,6 @@ class LoanModel extends HiveObject {
       amount: (json['amount'] as num).toDouble(),
       transactionDate: DateTime.parse(json['transactionDate']),
       dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
-      currency: json['currency'],
-      status: LoanStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => LoanStatus.active,
-      ),
       notes: json['notes'],
       includeInZakat: json['includeInZakat'] ?? true,
       createdAt: DateTime.parse(json['createdAt']),
@@ -100,8 +78,6 @@ class LoanModel extends HiveObject {
     double? amount,
     DateTime? transactionDate,
     DateTime? dueDate,
-    String? currency,
-    LoanStatus? status,
     String? notes,
     bool? includeInZakat,
     DateTime? createdAt,
@@ -113,8 +89,6 @@ class LoanModel extends HiveObject {
       amount: amount ?? this.amount,
       transactionDate: transactionDate ?? this.transactionDate,
       dueDate: dueDate ?? this.dueDate,
-      currency: currency ?? this.currency,
-      status: status ?? this.status,
       notes: notes ?? this.notes,
       includeInZakat: includeInZakat ?? this.includeInZakat,
       createdAt: createdAt ?? this.createdAt,

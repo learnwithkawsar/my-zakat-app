@@ -22,19 +22,17 @@ class LoanModelAdapter extends TypeAdapter<LoanModel> {
       amount: fields[2] as double,
       transactionDate: fields[3] as DateTime,
       dueDate: fields[4] as DateTime?,
-      currency: fields[5] as String,
-      status: fields[6] as LoanStatus,
-      notes: fields[7] as String?,
-      includeInZakat: fields[8] as bool,
-      createdAt: fields[9] as DateTime?,
-      updatedAt: fields[10] as DateTime?,
+      notes: fields[5] as String?,
+      includeInZakat: fields[6] as bool,
+      createdAt: fields[7] as DateTime?,
+      updatedAt: fields[8] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, LoanModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -46,16 +44,12 @@ class LoanModelAdapter extends TypeAdapter<LoanModel> {
       ..writeByte(4)
       ..write(obj.dueDate)
       ..writeByte(5)
-      ..write(obj.currency)
-      ..writeByte(6)
-      ..write(obj.status)
-      ..writeByte(7)
       ..write(obj.notes)
-      ..writeByte(8)
+      ..writeByte(6)
       ..write(obj.includeInZakat)
-      ..writeByte(9)
+      ..writeByte(7)
       ..write(obj.createdAt)
-      ..writeByte(10)
+      ..writeByte(8)
       ..write(obj.updatedAt);
   }
 

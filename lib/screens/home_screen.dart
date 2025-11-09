@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../modules/borrower/screens/borrower_list_screen.dart';
+import '../modules/loan/screens/loan_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -52,9 +54,25 @@ class HomeScreen extends StatelessWidget {
               mainAxisSpacing: 16,
               children: [
                 _buildActionCard(
+                  icon: Icons.person,
+                  title: 'Borrowers',
+                  color: Get.theme.colorScheme.primary,
+                  onTap: () {
+                    Get.to(() => const BorrowerListScreen());
+                  },
+                ),
+                _buildActionCard(
+                  icon: Icons.account_balance_wallet,
+                  title: 'Loans',
+                  color: Get.theme.colorScheme.secondary,
+                  onTap: () {
+                    Get.to(() => const LoanListScreen());
+                  },
+                ),
+                _buildActionCard(
                   icon: Icons.calculate,
                   title: 'Calculate Zakat',
-                  color: Get.theme.colorScheme.primary,
+                  color: Get.theme.colorScheme.tertiary,
                   onTap: () {
                     // Navigate to calculator
                   },
@@ -62,33 +80,9 @@ class HomeScreen extends StatelessWidget {
                 _buildActionCard(
                   icon: Icons.history,
                   title: 'View History',
-                  color: Get.theme.colorScheme.secondary,
-                  onTap: () {
-                    // Navigate to history
-                  },
-                ),
-                _buildActionCard(
-                  icon: Icons.account_balance,
-                  title: 'Zakat Info',
-                  color: Get.theme.colorScheme.tertiary,
-                  onTap: () {
-                    Get.snackbar(
-                      'Info',
-                      'Zakat information coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
-                ),
-                _buildActionCard(
-                  icon: Icons.share,
-                  title: 'Share App',
                   color: Get.theme.colorScheme.primaryContainer,
                   onTap: () {
-                    Get.snackbar(
-                      'Share',
-                      'Share functionality coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
+                    // Navigate to history
                   },
                 ),
               ],

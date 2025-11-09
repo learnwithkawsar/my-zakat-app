@@ -138,9 +138,8 @@ class DatabaseService {
   }
 
   static List<LoanModel> getActiveLoans() {
-    return _loansBox!.values
-        .where((loan) => loan.status == LoanStatus.active)
-        .toList();
+    // All loans are considered active (no status field)
+    return _loansBox!.values.toList();
   }
 
   static Future<void> updateLoan(LoanModel loan) async {
@@ -346,19 +345,16 @@ class DatabaseService {
     double total = 0.0;
 
     for (var loan in loans) {
-      if (loan.status == LoanStatus.active) {
-        total += calculateLoanOutstanding(loan.id);
-      }
+      total += calculateLoanOutstanding(loan.id);
     }
 
     return total;
   }
 
-  /// Get all active loans for zakat calculation
+  /// Get all loans for zakat calculation (only those with includeInZakat = true)
   static List<LoanModel> getActiveLoansForZakat() {
     return _loansBox!.values
-        .where((loan) =>
-            loan.status == LoanStatus.active && loan.includeInZakat)
+        .where((loan) => loan.includeInZakat)
         .toList();
   }
 
