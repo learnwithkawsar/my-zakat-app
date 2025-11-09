@@ -172,6 +172,23 @@ class DatabaseService {
       ..sort((a, b) => b.date.compareTo(a.date));
   }
 
+  /// Get all payments for a borrower (both loan-specific and borrower-level)
+  static List<PaymentModel> getPaymentsByBorrower(String borrowerId) {
+    return _paymentsBox!.values
+        .where((payment) => payment.borrowerId == borrowerId)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  /// Get borrower-level payments (not allocated to specific loan)
+  static List<PaymentModel> getBorrowerLevelPayments(String borrowerId) {
+    return _paymentsBox!.values
+        .where((payment) => 
+            payment.borrowerId == borrowerId && payment.loanId == null)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
   static Future<void> updatePayment(PaymentModel payment) async {
     await _paymentsBox!.put(payment.id, payment);
   }
@@ -326,12 +343,47 @@ class DatabaseService {
   // ==================== Utility Methods ====================
 
   /// Calculate total outstanding balance for a loan
+  /// Includes both loan-specific payments and allocated borrower payments
   static double calculateLoanOutstanding(String loanId) {
     final loan = getLoan(loanId);
     if (loan == null) return 0.0;
 
-    final payments = getPaymentsByLoan(loanId);
-    final totalPaid = payments.fold<double>(
+    // Get loan-specific payments
+    final loanPayments = getPaymentsByLoan(loanId);
+    double totalPaid = loanPayments.fold<double>(
+      0.0,
+      (sum, payment) => sum + payment.amount,
+    );
+
+    // Get borrower-level payments and allocate proportionally
+    final borrowerPayments = getBorrowerLevelPayments(loan.borrowerId);
+    if (borrowerPayments.isNotEmpty) {
+      final allLoans = getLoansByBorrower(loan.borrowerId);
+      final totalOutstanding = allLoans.fold<double>(
+        0.0,
+        (sum, l) => sum + calculateLoanOutstandingWithoutBorrowerPayments(l.id),
+      );
+
+      if (totalOutstanding > 0) {
+        final loanOutstanding = calculateLoanOutstandingWithoutBorrowerPayments(loanId);
+        final loanProportion = loanOutstanding / totalOutstanding;
+
+        for (var borrowerPayment in borrowerPayments) {
+          totalPaid += borrowerPayment.amount * loanProportion;
+        }
+      }
+    }
+
+    return loan.amount - totalPaid;
+  }
+
+  /// Calculate outstanding without considering borrower-level payments
+  static double calculateLoanOutstandingWithoutBorrowerPayments(String loanId) {
+    final loan = getLoan(loanId);
+    if (loan == null) return 0.0;
+
+    final loanPayments = getPaymentsByLoan(loanId);
+    final totalPaid = loanPayments.fold<double>(
       0.0,
       (sum, payment) => sum + payment.amount,
     );
@@ -340,6 +392,7 @@ class DatabaseService {
   }
 
   /// Calculate total outstanding for a borrower
+  /// This already accounts for borrower-level payments in calculateLoanOutstanding
   static double calculateBorrowerOutstanding(String borrowerId) {
     final loans = getLoansByBorrower(borrowerId);
     double total = 0.0;

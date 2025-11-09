@@ -5,6 +5,7 @@ import '../controllers/loan_controller.dart';
 import '../../../models/loan_model.dart';
 import '../../../models/borrower_model.dart';
 import '../../../services/database_service.dart';
+import '../../borrower/controllers/borrower_controller.dart';
 import '../../../common/widgets/custom_text_field.dart';
 import '../../../common/utils/validators.dart';
 
@@ -115,7 +116,15 @@ class _LoanFormScreenState extends State<LoanFormScreen> {
     });
 
     if (success) {
-      Get.back();
+      // Refresh borrower controller if loan was added/updated
+      try {
+        final borrowerController = Get.find<BorrowerController>();
+        await borrowerController.loadBorrowers();
+      } catch (e) {
+        // Controller might not be initialized, that's okay
+      }
+      
+      Get.back(result: true); // Return true to indicate refresh needed
       Get.snackbar(
         'Success',
         widget.loan == null

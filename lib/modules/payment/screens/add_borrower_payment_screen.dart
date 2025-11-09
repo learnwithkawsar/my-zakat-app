@@ -2,27 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/payment_controller.dart';
+import '../../../models/borrower_model.dart';
 import '../../../models/loan_model.dart';
 import '../../../services/database_service.dart';
 import '../../../common/widgets/custom_text_field.dart';
 import '../../../common/utils/validators.dart';
+import '../../borrower/controllers/borrower_controller.dart';
 
-class AddPaymentScreen extends StatefulWidget {
-  final String loanId;
+class AddBorrowerPaymentScreen extends StatefulWidget {
+  final String borrowerId;
 
-  const AddPaymentScreen({super.key, required this.loanId});
+  const AddBorrowerPaymentScreen({super.key, required this.borrowerId});
 
   @override
-  State<AddPaymentScreen> createState() => _AddPaymentScreenState();
+  State<AddBorrowerPaymentScreen> createState() => _AddBorrowerPaymentScreenState();
 }
 
-class _AddPaymentScreenState extends State<AddPaymentScreen> {
+class _AddBorrowerPaymentScreenState extends State<AddBorrowerPaymentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _notesController = TextEditingController();
   final controller = Get.put(PaymentController());
 
-  LoanModel? _loan;
+  BorrowerModel? _borrower;
+  List<LoanModel> _loans = [];
   DateTime _paymentDate = DateTime.now();
   String? _paymentType;
   bool _isSaving = false;
@@ -30,12 +33,13 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _loan = DatabaseService.getLoan(widget.loanId);
-    if (_loan == null) {
+    _borrower = DatabaseService.getBorrower(widget.borrowerId);
+    _loans = DatabaseService.getLoansByBorrower(widget.borrowerId);
+    if (_borrower == null) {
       Get.back();
       Get.snackbar(
         'Error',
-        'Loan not found',
+        'Borrower not found',
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -67,15 +71,15 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
       return;
     }
 
-    if (_loan == null) return;
+    if (_borrower == null) return;
 
     final amount = double.parse(_amountController.text);
-    final outstanding = DatabaseService.calculateLoanOutstanding(widget.loanId);
+    final totalOutstanding = DatabaseService.calculateBorrowerOutstanding(widget.borrowerId);
 
-    if (amount > outstanding) {
+    if (amount > totalOutstanding) {
       Get.snackbar(
         'Error',
-        'Payment amount cannot exceed outstanding balance of ${NumberFormat('#,##0.00').format(outstanding)}',
+        'Payment amount cannot exceed total outstanding balance of ${NumberFormat('#,##0.00').format(totalOutstanding)}',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -85,8 +89,8 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
       _isSaving = true;
     });
 
-    final success = await controller.addPayment(
-      loanId: widget.loanId,
+    final success = await controller.addBorrowerPayment(
+      borrowerId: widget.borrowerId,
       amount: amount,
       date: _paymentDate,
       paymentType: _paymentType,
@@ -98,38 +102,47 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
     });
 
     if (success) {
-      Get.back();
+      // Refresh borrower controller to update outstanding balance
+      try {
+        final borrowerController = Get.find<BorrowerController>();
+        await borrowerController.loadBorrowers();
+      } catch (e) {
+        // Controller might not be initialized, that's okay
+      }
+      
+      Get.back(result: true); // Return true to indicate refresh needed
       Get.snackbar(
         'Success',
-        'Payment added successfully',
+        'Payment added successfully. It will be allocated proportionally across all loans.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Get.theme.colorScheme.primaryContainer,
         colorText: Get.theme.colorScheme.onPrimaryContainer,
+        duration: const Duration(seconds: 3),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loan == null) {
+    if (_borrower == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final outstanding = DatabaseService.calculateLoanOutstanding(widget.loanId);
-    final settings = DatabaseService.getSettings();
+    final totalOutstanding = DatabaseService.calculateBorrowerOutstanding(widget.borrowerId);
+    final totalLoanAmount = _loans.fold<double>(0.0, (sum, loan) => sum + loan.amount);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Payment'),
+        title: Text('Add Payment - ${_borrower!.name}'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Loan Info Card
+            // Info Card
             Card(
               color: Get.theme.colorScheme.primaryContainer,
               child: Padding(
@@ -138,24 +151,78 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Outstanding Balance',
-                      style: Get.theme.textTheme.titleSmall?.copyWith(
+                      'Borrower-Level Payment',
+                      style: Get.theme.textTheme.titleMedium?.copyWith(
+                        color: Get.theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'This payment will be allocated proportionally across all ${_loans.length} loan(s) based on outstanding balances.',
+                      style: Get.theme.textTheme.bodySmall?.copyWith(
                         color: Get.theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      NumberFormat('#,##0.00').format(outstanding),
-                      style: Get.theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Get.theme.colorScheme.onPrimaryContainer,
-                      ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Outstanding',
+                          style: Get.theme.textTheme.titleSmall?.copyWith(
+                            color: Get.theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        Text(
+                          NumberFormat('#,##0.00').format(totalOutstanding),
+                          style: Get.theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Get.theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
+            // Loans Summary
+            if (_loans.isNotEmpty) ...[
+              Text(
+                'Loans Summary',
+                style: Get.theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._loans.map((loan) {
+                final outstanding = DatabaseService.calculateLoanOutstanding(loan.id);
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(
+                      'Loan: ${NumberFormat('#,##0.00').format(loan.amount)}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      'Outstanding: ${NumberFormat('#,##0.00').format(outstanding)}',
+                      style: TextStyle(
+                        color: outstanding > 0
+                            ? Get.theme.colorScheme.error
+                            : Get.theme.colorScheme.primary,
+                      ),
+                    ),
+                    trailing: Text(
+                      '${((outstanding / totalOutstanding) * 100).toStringAsFixed(1)}%',
+                      style: Get.theme.textTheme.bodySmall,
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
             CustomTextField(
               controller: _amountController,
               labelText: 'Payment Amount *',

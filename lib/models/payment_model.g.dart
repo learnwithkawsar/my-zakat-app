@@ -18,35 +18,38 @@ class PaymentModelAdapter extends TypeAdapter<PaymentModel> {
     };
     return PaymentModel(
       id: fields[0] as String,
-      loanId: fields[1] as String,
-      amount: fields[2] as double,
-      date: fields[3] as DateTime,
-      paymentType: fields[4] as String?,
-      notes: fields[5] as String?,
-      createdAt: fields[6] as DateTime?,
-      updatedAt: fields[7] as DateTime?,
+      loanId: fields[1] as String?,
+      borrowerId: fields[2] as String,
+      amount: fields[3] as double,
+      date: fields[4] as DateTime,
+      paymentType: fields[5] as String?,
+      notes: fields[6] as String?,
+      createdAt: fields[7] as DateTime?,
+      updatedAt: fields[8] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, PaymentModel obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.loanId)
       ..writeByte(2)
-      ..write(obj.amount)
+      ..write(obj.borrowerId)
       ..writeByte(3)
-      ..write(obj.date)
+      ..write(obj.amount)
       ..writeByte(4)
-      ..write(obj.paymentType)
+      ..write(obj.date)
       ..writeByte(5)
-      ..write(obj.notes)
+      ..write(obj.paymentType)
       ..writeByte(6)
-      ..write(obj.createdAt)
+      ..write(obj.notes)
       ..writeByte(7)
+      ..write(obj.createdAt)
+      ..writeByte(8)
       ..write(obj.updatedAt);
   }
 

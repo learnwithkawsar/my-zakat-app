@@ -2,27 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../controllers/payment_controller.dart';
+import '../../../models/payment_model.dart';
 import '../../../models/loan_model.dart';
+import '../../../models/borrower_model.dart';
 import '../../../services/database_service.dart';
 import '../../../common/widgets/custom_text_field.dart';
 import '../../../common/utils/validators.dart';
 
-class AddPaymentScreen extends StatefulWidget {
-  final String loanId;
+class EditPaymentScreen extends StatefulWidget {
+  final PaymentModel payment;
 
-  const AddPaymentScreen({super.key, required this.loanId});
+  const EditPaymentScreen({super.key, required this.payment});
 
   @override
-  State<AddPaymentScreen> createState() => _AddPaymentScreenState();
+  State<EditPaymentScreen> createState() => _EditPaymentScreenState();
 }
 
-class _AddPaymentScreenState extends State<AddPaymentScreen> {
+class _EditPaymentScreenState extends State<EditPaymentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _notesController = TextEditingController();
-  final controller = Get.put(PaymentController());
+  final controller = Get.find<PaymentController>();
 
   LoanModel? _loan;
+  BorrowerModel? _borrower;
+  List<LoanModel> _borrowerLoans = [];
   DateTime _paymentDate = DateTime.now();
   String? _paymentType;
   bool _isSaving = false;
@@ -30,15 +34,16 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _loan = DatabaseService.getLoan(widget.loanId);
-    if (_loan == null) {
-      Get.back();
-      Get.snackbar(
-        'Error',
-        'Loan not found',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+    _borrower = DatabaseService.getBorrower(widget.payment.borrowerId);
+    if (widget.payment.isForSpecificLoan) {
+      _loan = DatabaseService.getLoan(widget.payment.loanId!);
+    } else {
+      _borrowerLoans = DatabaseService.getLoansByBorrower(widget.payment.borrowerId);
     }
+    _amountController.text = widget.payment.amount.toString();
+    _paymentDate = widget.payment.date;
+    _paymentType = widget.payment.paymentType;
+    _notesController.text = widget.payment.notes ?? '';
   }
 
   @override
@@ -67,41 +72,64 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
       return;
     }
 
-    if (_loan == null) return;
-
     final amount = double.parse(_amountController.text);
-    final outstanding = DatabaseService.calculateLoanOutstanding(widget.loanId);
+    
+    if (widget.payment.isForSpecificLoan) {
+      if (_loan == null) return;
+      
+      // Calculate outstanding balance excluding this payment
+      final existingPayments = DatabaseService.getPaymentsByLoan(widget.payment.loanId!);
+      final otherPaymentsTotal = existingPayments
+          .where((p) => p.id != widget.payment.id)
+          .fold<double>(0.0, (sum, p) => sum + p.amount);
+      
+      final loanOutstandingWithoutBorrower = 
+          DatabaseService.calculateLoanOutstandingWithoutBorrowerPayments(widget.payment.loanId!);
+      final maxAllowed = loanOutstandingWithoutBorrower + widget.payment.amount - otherPaymentsTotal;
 
-    if (amount > outstanding) {
-      Get.snackbar(
-        'Error',
-        'Payment amount cannot exceed outstanding balance of ${NumberFormat('#,##0.00').format(outstanding)}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
+      if (amount > maxAllowed) {
+        Get.snackbar(
+          'Error',
+          'Payment amount cannot exceed outstanding balance of ${NumberFormat('#,##0.00').format(maxAllowed)}',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+    } else {
+      // Borrower-level payment validation
+      final totalOutstanding = DatabaseService.calculateBorrowerOutstanding(widget.payment.borrowerId);
+      if (amount > totalOutstanding) {
+        Get.snackbar(
+          'Error',
+          'Payment amount cannot exceed total outstanding balance of ${NumberFormat('#,##0.00').format(totalOutstanding)}',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
     }
 
     setState(() {
       _isSaving = true;
     });
 
-    final success = await controller.addPayment(
-      loanId: widget.loanId,
+    final updatedPayment = widget.payment.copyWith(
       amount: amount,
       date: _paymentDate,
       paymentType: _paymentType,
       notes: _notesController.text.isEmpty ? null : _notesController.text,
     );
 
+    final success = await controller.updatePayment(updatedPayment);
+
     setState(() {
       _isSaving = false;
     });
 
     if (success) {
-      Get.back();
+      Get.back(result: true); // Return true to indicate refresh needed
       Get.snackbar(
         'Success',
-        'Payment added successfully',
+        'Payment updated successfully',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Get.theme.colorScheme.primaryContainer,
         colorText: Get.theme.colorScheme.onPrimaryContainer,
@@ -111,25 +139,35 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loan == null) {
+    if (_borrower == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final outstanding = DatabaseService.calculateLoanOutstanding(widget.loanId);
-    final settings = DatabaseService.getSettings();
+    double maxAllowed = 0.0;
+    if (widget.payment.isForSpecificLoan && _loan != null) {
+      final existingPayments = DatabaseService.getPaymentsByLoan(widget.payment.loanId!);
+      final otherPaymentsTotal = existingPayments
+          .where((p) => p.id != widget.payment.id)
+          .fold<double>(0.0, (sum, p) => sum + p.amount);
+      final loanOutstandingWithoutBorrower = 
+          DatabaseService.calculateLoanOutstandingWithoutBorrowerPayments(widget.payment.loanId!);
+      maxAllowed = loanOutstandingWithoutBorrower + widget.payment.amount - otherPaymentsTotal;
+    } else {
+      maxAllowed = DatabaseService.calculateBorrowerOutstanding(widget.payment.borrowerId);
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Payment'),
+        title: const Text('Edit Payment'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Loan Info Card
+            // Info Card
             Card(
               color: Get.theme.colorScheme.primaryContainer,
               child: Padding(
@@ -138,19 +176,38 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Outstanding Balance',
+                      widget.payment.isForSpecificLoan
+                          ? 'Max Allowed Amount'
+                          : 'Total Outstanding',
                       style: Get.theme.textTheme.titleSmall?.copyWith(
                         color: Get.theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      NumberFormat('#,##0.00').format(outstanding),
+                      NumberFormat('#,##0.00').format(maxAllowed),
                       style: Get.theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Get.theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
+                    if (widget.payment.isForSpecificLoan && _loan != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Loan Amount: ${NumberFormat('#,##0.00').format(_loan!.amount)}',
+                        style: Get.theme.textTheme.bodySmall?.copyWith(
+                          color: Get.theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'This payment applies to all ${_borrowerLoans.length} loan(s) proportionally',
+                        style: Get.theme.textTheme.bodySmall?.copyWith(
+                          color: Get.theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -262,7 +319,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Add Payment'),
+                    : const Text('Update Payment'),
               ),
             ),
           ],

@@ -3,13 +3,9 @@ import 'package:get/get.dart';
 import '../controllers/loan_controller.dart';
 import '../../../models/loan_model.dart';
 import '../../../models/borrower_model.dart';
-import '../../../models/payment_model.dart';
 import '../../../services/database_service.dart';
-import '../../../common/widgets/empty_state.dart';
 import 'package:intl/intl.dart';
 import '../../../common/utils/date_formatter.dart';
-import '../../payment/screens/add_payment_screen.dart';
-import '../../payment/screens/payment_history_screen.dart';
 import 'loan_form_screen.dart';
 
 class LoanDetailScreen extends StatelessWidget {
@@ -31,9 +27,11 @@ class LoanDetailScreen extends StatelessWidget {
     }
 
     final borrower = DatabaseService.getBorrower(loan.borrowerId);
-    final payments = DatabaseService.getPaymentsByLoan(loanId);
     final outstanding = loanController.getLoanOutstanding(loanId);
-    final totalPaid = payments.fold<double>(
+    
+    // Calculate total paid (loan-specific payments only)
+    final loanPayments = DatabaseService.getPaymentsByLoan(loanId);
+    final totalPaid = loanPayments.fold<double>(
       0.0,
       (sum, payment) => sum + payment.amount,
     );
@@ -205,96 +203,6 @@ class LoanDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          // Payments Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Payments (${payments.length})',
-                style: Get.theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (outstanding > 0)
-                TextButton.icon(
-                  onPressed: () {
-                    Get.to(() => AddPaymentScreen(loanId: loanId));
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Payment'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (payments.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: EmptyState(
-                  icon: Icons.payment_outlined,
-                  title: 'No Payments',
-                  message: 'No payments recorded for this loan',
-                  actionLabel: outstanding > 0
-                      ? 'Add Payment'
-                      : null,
-                  onAction: outstanding > 0
-                      ? () => Get.to(() => AddPaymentScreen(loanId: loanId))
-                      : null,
-                ),
-              ),
-            )
-          else
-            ...payments.take(5).map((payment) {
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Get.theme.colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.payment,
-                      color: Get.theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  title: Text(
-                    NumberFormat('#,##0.00').format(payment.amount),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    DateFormatter.formatDisplay(payment.date),
-                  ),
-                  trailing: payment.notes != null && payment.notes!.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.info_outline),
-                          onPressed: () {
-                            Get.dialog(
-                              AlertDialog(
-                                title: const Text('Payment Notes'),
-                                content: Text(payment.notes!),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Get.back(),
-                                    child: const Text('Close'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        )
-                      : null,
-                ),
-              );
-            }),
-          if (payments.length > 5)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextButton(
-                onPressed: () {
-                  Get.to(() => PaymentHistoryScreen(loanId: loanId));
-                },
-                child: Text('View All ${payments.length} Payments'),
-              ),
-            ),
         ],
       ),
     );

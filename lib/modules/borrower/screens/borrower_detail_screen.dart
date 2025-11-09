@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import '../../../common/utils/date_formatter.dart';
 import '../../loan/screens/loan_form_screen.dart';
 import '../../loan/screens/loan_detail_screen.dart';
+import '../../payment/screens/borrower_payments_screen.dart';
+import '../../payment/screens/add_borrower_payment_screen.dart';
 import 'borrower_form_screen.dart';
 
 class BorrowerDetailScreen extends StatelessWidget {
@@ -19,8 +21,11 @@ class BorrowerDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borrowerController = Get.find<BorrowerController>();
-    final borrower = borrowerController.getBorrowerById(borrowerId);
-    final settings = DatabaseService.getSettings();
+    
+    // Use Obx to make the screen reactive to borrower data changes
+    return Obx(() {
+      final borrower = borrowerController.getBorrowerById(borrowerId);
+      final settings = DatabaseService.getSettings();
 
     if (borrower == null) {
       return Scaffold(
@@ -61,9 +66,13 @@ class BorrowerDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await borrowerController.loadBorrowers();
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
           // Borrower Info Card
           Card(
             child: Padding(
@@ -191,6 +200,91 @@ class BorrowerDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // Payment Actions
+          Row(
+            children: [
+              Expanded(
+                child: Card(
+                  elevation: 2,
+                  child: InkWell(
+                    onTap: () async {
+                      final result = await Get.to(() => AddBorrowerPaymentScreen(borrowerId: borrowerId));
+                      if (result == true) {
+                        // Refresh the screen by reloading borrower data
+                        await borrowerController.loadBorrowers();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.payment,
+                            color: Get.theme.colorScheme.primary,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'Add Payment',
+                              style: Get.theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Get.theme.colorScheme.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Card(
+                  elevation: 2,
+                  child: InkWell(
+                    onTap: () {
+                      Get.to(() => BorrowerPaymentsScreen(borrowerId: borrowerId));
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.history,
+                            color: Get.theme.colorScheme.secondary,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'View Payments',
+                              style: Get.theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Get.theme.colorScheme.secondary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           // Loans Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -202,8 +296,12 @@ class BorrowerDetailScreen extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: () {
-                  Get.to(() => LoanFormScreen(borrowerId: borrowerId));
+                onPressed: () async {
+                  final result = await Get.to(() => LoanFormScreen(borrowerId: borrowerId));
+                  if (result == true) {
+                    // Refresh the screen by reloading borrower data
+                    await borrowerController.loadBorrowers();
+                  }
                 },
                 icon: const Icon(Icons.add),
                 label: const Text('Add Loan'),
@@ -285,8 +383,10 @@ class BorrowerDetailScreen extends StatelessWidget {
               );
             }),
         ],
+        ),
       ),
     );
+    });
   }
 
   void _showDeleteDialog(

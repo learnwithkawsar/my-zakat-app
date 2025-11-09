@@ -1,37 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../controllers/payment_controller.dart';
+import '../../../models/borrower_model.dart';
 import '../../../models/payment_model.dart';
 import '../../../models/loan_model.dart';
 import '../../../services/database_service.dart';
 import '../../../common/widgets/empty_state.dart';
-import 'package:intl/intl.dart';
 import '../../../common/utils/date_formatter.dart';
 import 'edit_payment_screen.dart';
+import '../../loan/screens/loan_detail_screen.dart';
+import '../../borrower/controllers/borrower_controller.dart';
 
-class PaymentHistoryScreen extends StatelessWidget {
-  final String loanId;
+class BorrowerPaymentsScreen extends StatelessWidget {
+  final String borrowerId;
 
-  const PaymentHistoryScreen({super.key, required this.loanId});
+  const BorrowerPaymentsScreen({super.key, required this.borrowerId});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(PaymentController());
-    final loan = DatabaseService.getLoan(loanId);
+    final borrower = DatabaseService.getBorrower(borrowerId);
 
-    if (loan == null) {
+    if (borrower == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Payment History')),
-        body: const Center(child: Text('Loan not found')),
+        body: const Center(child: Text('Borrower not found')),
       );
     }
 
     // Load payments
-    controller.loadPaymentsByLoan(loanId);
+    controller.loadPaymentsByBorrower(borrowerId);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payment History'),
+        title: Text('${borrower.name} - Payments'),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -42,7 +45,7 @@ class PaymentHistoryScreen extends StatelessWidget {
           return EmptyState(
             icon: Icons.payment_outlined,
             title: 'No Payments',
-            message: 'No payments recorded for this loan',
+            message: 'No payments recorded for this borrower',
           );
         }
 
@@ -109,6 +112,10 @@ class PaymentHistoryScreen extends StatelessWidget {
                 itemCount: controller.payments.length,
                 itemBuilder: (context, index) {
                   final payment = controller.payments[index];
+                  final loan = payment.loanId != null 
+                      ? DatabaseService.getLoan(payment.loanId!)
+                      : null;
+                  
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
@@ -130,6 +137,30 @@ class PaymentHistoryScreen extends StatelessWidget {
                           Text(
                             DateFormatter.formatDisplay(payment.date),
                           ),
+                          if (loan != null) ...[
+                            const SizedBox(height: 4),
+                            InkWell(
+                              onTap: () {
+                                Get.to(() => LoanDetailScreen(loanId: loan.id));
+                              },
+                              child: Text(
+                                'Loan: ${NumberFormat('#,##0.00').format(loan.amount)}',
+                                style: TextStyle(
+                                  color: Get.theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 4),
+                            Chip(
+                              label: const Text(
+                                'All Loans',
+                                style: TextStyle(fontSize: 10),
+                              ),
+                              backgroundColor: Get.theme.colorScheme.secondaryContainer,
+                            ),
+                          ],
                           if (payment.paymentType != null) ...[
                             const SizedBox(height: 4),
                             Chip(
@@ -169,7 +200,17 @@ class PaymentHistoryScreen extends StatelessWidget {
                             ),
                             onTap: () async {
                               await Future.delayed(const Duration(milliseconds: 100));
-                              Get.to(() => EditPaymentScreen(payment: payment));
+                              final result = await Get.to(() => EditPaymentScreen(payment: payment));
+                              if (result == true) {
+                                // Refresh payments and borrower data
+                                await controller.loadPaymentsByBorrower(borrowerId);
+                                try {
+                                  final borrowerController = Get.find<BorrowerController>();
+                                  await borrowerController.loadBorrowers();
+                                } catch (e) {
+                                  // Controller might not be initialized
+                                }
+                              }
                             },
                           ),
                           PopupMenuItem(
@@ -217,7 +258,20 @@ class PaymentHistoryScreen extends StatelessWidget {
           TextButton(
             onPressed: () async {
               Get.back();
-              await controller.deletePayment(payment.id, loanId: loanId);
+              final success = await controller.deletePayment(
+                payment.id,
+                loanId: payment.loanId,
+                borrowerId: payment.borrowerId,
+              );
+              if (success) {
+                // Refresh borrower data
+                try {
+                  final borrowerController = Get.find<BorrowerController>();
+                  await borrowerController.loadBorrowers();
+                } catch (e) {
+                  // Controller might not be initialized
+                }
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: Get.theme.colorScheme.error,

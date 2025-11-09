@@ -8,29 +8,33 @@ class PaymentModel extends HiveObject {
   final String id;
 
   @HiveField(1)
-  String loanId;
+  String? loanId; // Optional - null if payment is for borrower (all loans)
 
   @HiveField(2)
-  double amount;
+  String borrowerId; // Required - always track which borrower
 
   @HiveField(3)
-  DateTime date;
+  double amount;
 
   @HiveField(4)
-  String? paymentType;
+  DateTime date;
 
   @HiveField(5)
-  String? notes;
+  String? paymentType;
 
   @HiveField(6)
-  DateTime createdAt;
+  String? notes;
 
   @HiveField(7)
+  DateTime createdAt;
+
+  @HiveField(8)
   DateTime updatedAt;
 
   PaymentModel({
     required this.id,
-    required this.loanId,
+    this.loanId, // Optional - null means payment for all borrower's loans
+    required this.borrowerId,
     required this.amount,
     required this.date,
     this.paymentType,
@@ -40,10 +44,17 @@ class PaymentModel extends HiveObject {
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
+  /// Check if payment is for a specific loan
+  bool get isForSpecificLoan => loanId != null;
+
+  /// Check if payment is for all borrower's loans
+  bool get isForAllLoans => loanId == null;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'loanId': loanId,
+      'borrowerId': borrowerId,
       'amount': amount,
       'date': date.toIso8601String(),
       'paymentType': paymentType,
@@ -57,6 +68,7 @@ class PaymentModel extends HiveObject {
     return PaymentModel(
       id: json['id'],
       loanId: json['loanId'],
+      borrowerId: json['borrowerId'],
       amount: (json['amount'] as num).toDouble(),
       date: DateTime.parse(json['date']),
       paymentType: json['paymentType'],
@@ -69,6 +81,7 @@ class PaymentModel extends HiveObject {
   PaymentModel copyWith({
     String? id,
     String? loanId,
+    String? borrowerId,
     double? amount,
     DateTime? date,
     String? paymentType,
@@ -79,6 +92,7 @@ class PaymentModel extends HiveObject {
     return PaymentModel(
       id: id ?? this.id,
       loanId: loanId ?? this.loanId,
+      borrowerId: borrowerId ?? this.borrowerId,
       amount: amount ?? this.amount,
       date: date ?? this.date,
       paymentType: paymentType ?? this.paymentType,
