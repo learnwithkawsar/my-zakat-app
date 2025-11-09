@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
 import 'home_screen.dart';
-import 'zakat_calculator_screen.dart';
+import '../modules/zakat/screens/zakat_calculator_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
@@ -12,6 +12,7 @@ import '../modules/asset/screens/asset_list_screen.dart';
 import '../modules/liability/screens/liability_list_screen.dart';
 import '../modules/beneficiary/screens/beneficiary_list_screen.dart';
 import '../modules/settings/screens/settings_screen.dart';
+import '../modules/zakat_year/screens/zakat_year_list_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({super.key});
@@ -121,6 +122,14 @@ class DashboardScreen extends StatelessWidget {
                   onTap: () {
                     dashboardController.changeIndex(1);
                     Navigator.pop(context);
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.calendar_today,
+                  title: 'Zakat Years',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(() => const ZakatYearListScreen());
                   },
                 ),
                 _buildDrawerItem(

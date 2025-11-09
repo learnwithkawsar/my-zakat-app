@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:collection/collection.dart';
 import '../models/borrower_model.dart';
 import '../models/loan_model.dart';
 import '../models/payment_model.dart';
@@ -7,6 +8,7 @@ import '../models/asset_model.dart';
 import '../models/liability_model.dart';
 import '../models/beneficiary_model.dart';
 import '../models/zakat_record_model.dart';
+import '../models/zakat_payment_model.dart';
 import '../models/snapshot_model.dart';
 import '../models/settings_model.dart';
 
@@ -18,6 +20,7 @@ class DatabaseService {
   static const String _liabilitiesBoxName = 'liabilities';
   static const String _beneficiariesBoxName = 'beneficiaries';
   static const String _zakatRecordsBoxName = 'zakat_records';
+  static const String _zakatPaymentsBoxName = 'zakat_payments';
   static const String _snapshotsBoxName = 'snapshots';
   static const String _settingsBoxName = 'settings';
 
@@ -31,6 +34,7 @@ class DatabaseService {
   static Box<LiabilityModel>? _liabilitiesBox;
   static Box<BeneficiaryModel>? _beneficiariesBox;
   static Box<ZakatRecordModel>? _zakatRecordsBox;
+  static Box<ZakatPaymentModel>? _zakatPaymentsBox;
   static Box<SnapshotModel>? _snapshotsBox;
   static Box<SettingsModel>? _settingsBox;
 
@@ -72,6 +76,9 @@ class DatabaseService {
     if (!Hive.isAdapterRegistered(10)) {
       Hive.registerAdapter(LiabilityTypeAdapter());
     }
+    if (!Hive.isAdapterRegistered(11)) {
+      Hive.registerAdapter(ZakatPaymentModelAdapter());
+    }
 
     // Open boxes
     _borrowersBox = await Hive.openBox<BorrowerModel>(_borrowersBoxName);
@@ -80,7 +87,16 @@ class DatabaseService {
     _assetsBox = await Hive.openBox<AssetModel>(_assetsBoxName);
     _liabilitiesBox = await Hive.openBox<LiabilityModel>(_liabilitiesBoxName);
     _beneficiariesBox = await Hive.openBox<BeneficiaryModel>(_beneficiariesBoxName);
-    _zakatRecordsBox = await Hive.openBox<ZakatRecordModel>(_zakatRecordsBoxName);
+    // Handle zakat records box migration
+    try {
+      _zakatRecordsBox = await Hive.openBox<ZakatRecordModel>(_zakatRecordsBoxName);
+    } catch (e) {
+      // If schema mismatch, delete and recreate the box
+      await Hive.deleteBoxFromDisk(_zakatRecordsBoxName);
+      _zakatRecordsBox = await Hive.openBox<ZakatRecordModel>(_zakatRecordsBoxName);
+    }
+    
+    _zakatPaymentsBox = await Hive.openBox<ZakatPaymentModel>(_zakatPaymentsBoxName);
     _snapshotsBox = await Hive.openBox<SnapshotModel>(_snapshotsBoxName);
     
     // Handle settings box migration
@@ -320,6 +336,100 @@ class DatabaseService {
     await _zakatRecordsBox!.delete(id);
   }
 
+  /// Get zakat record for a specific year
+  static ZakatRecordModel? getZakatRecordByYear(int year) {
+    return _zakatRecordsBox!.values.firstWhereOrNull(
+      (record) => record.zakatYearStart.year == year,
+    );
+  }
+
+  /// Get zakat record for a specific date range
+  static ZakatRecordModel? getZakatRecordByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    return _zakatRecordsBox!.values.firstWhereOrNull(
+      (record) =>
+          record.zakatYearStart.isAtSameMomentAs(startDate) &&
+          record.zakatYearEnd.isAtSameMomentAs(endDate),
+    );
+  }
+
+  /// Get zakat record for current year
+  static ZakatRecordModel? getCurrentYearZakatRecord() {
+    final currentYear = DateTime.now().year;
+    return getZakatRecordByYear(currentYear);
+  }
+
+  // ==================== Zakat Payments ====================
+
+  static Future<String> addZakatPayment(ZakatPaymentModel payment) async {
+    await _zakatPaymentsBox!.put(payment.id, payment);
+    
+    // Update zakat record amount paid
+    final record = getZakatRecord(payment.zakatRecordId);
+    if (record != null) {
+      final totalPaid = getZakatPaymentsByRecord(payment.zakatRecordId)
+          .fold<double>(0.0, (sum, p) => sum + p.amount);
+      final updated = record.copyWith(amountPaid: totalPaid);
+      await updateZakatRecord(updated);
+    }
+    
+    return payment.id;
+  }
+
+  static ZakatPaymentModel? getZakatPayment(String id) {
+    return _zakatPaymentsBox!.get(id);
+  }
+
+  static List<ZakatPaymentModel> getAllZakatPayments() {
+    return _zakatPaymentsBox!.values.toList()
+      ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+  }
+
+  static List<ZakatPaymentModel> getZakatPaymentsByRecord(String zakatRecordId) {
+    return _zakatPaymentsBox!.values
+        .where((payment) => payment.zakatRecordId == zakatRecordId)
+        .toList()
+      ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+  }
+
+  static List<ZakatPaymentModel> getZakatPaymentsByBeneficiary(String beneficiaryId) {
+    return _zakatPaymentsBox!.values
+        .where((payment) => payment.beneficiaryId == beneficiaryId)
+        .toList()
+      ..sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+  }
+
+  static Future<void> updateZakatPayment(ZakatPaymentModel payment) async {
+    await _zakatPaymentsBox!.put(payment.id, payment);
+    
+    // Update zakat record amount paid
+    final record = getZakatRecord(payment.zakatRecordId);
+    if (record != null) {
+      final totalPaid = getZakatPaymentsByRecord(payment.zakatRecordId)
+          .fold<double>(0.0, (sum, p) => sum + p.amount);
+      final updated = record.copyWith(amountPaid: totalPaid);
+      await updateZakatRecord(updated);
+    }
+  }
+
+  static Future<void> deleteZakatPayment(String id) async {
+    final payment = getZakatPayment(id);
+    if (payment != null) {
+      await _zakatPaymentsBox!.delete(id);
+      
+      // Update zakat record amount paid
+      final record = getZakatRecord(payment.zakatRecordId);
+      if (record != null) {
+        final totalPaid = getZakatPaymentsByRecord(payment.zakatRecordId)
+            .fold<double>(0.0, (sum, p) => sum + p.amount);
+        final updated = record.copyWith(amountPaid: totalPaid);
+        await updateZakatRecord(updated);
+      }
+    }
+  }
+
   // ==================== Snapshots ====================
 
   static Future<String> addSnapshot(SnapshotModel snapshot) async {
@@ -462,6 +572,7 @@ class DatabaseService {
     await _liabilitiesBox!.clear();
     await _beneficiariesBox!.clear();
     await _zakatRecordsBox!.clear();
+    await _zakatPaymentsBox!.clear();
     await _snapshotsBox!.clear();
     // Keep settings or reset to default
     await _initializeDefaultSettings();
@@ -476,6 +587,7 @@ class DatabaseService {
     await _liabilitiesBox?.close();
     await _beneficiariesBox?.close();
     await _zakatRecordsBox?.close();
+    await _zakatPaymentsBox?.close();
     await _snapshotsBox?.close();
     await _settingsBox?.close();
   }

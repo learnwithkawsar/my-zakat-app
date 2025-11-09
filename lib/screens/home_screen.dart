@@ -5,6 +5,8 @@ import '../modules/loan/screens/loan_list_screen.dart';
 import '../modules/asset/screens/asset_list_screen.dart';
 import '../modules/liability/screens/liability_list_screen.dart';
 import '../modules/beneficiary/screens/beneficiary_list_screen.dart';
+import '../modules/zakat/screens/zakat_calculator_screen.dart';
+import '../modules/zakat_year/screens/zakat_year_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -101,7 +103,15 @@ class HomeScreen extends StatelessWidget {
                   title: 'Calculate Zakat',
                   color: Get.theme.colorScheme.tertiary,
                   onTap: () {
-                    // Navigate to calculator
+                    Get.to(() => const ZakatCalculatorScreen());
+                  },
+                ),
+                _buildActionCard(
+                  icon: Icons.calendar_today,
+                  title: 'Zakat Years',
+                  color: Colors.teal,
+                  onTap: () {
+                    Get.to(() => const ZakatYearListScreen());
                   },
                 ),
               ],

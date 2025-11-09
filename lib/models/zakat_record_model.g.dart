@@ -19,40 +19,55 @@ class ZakatRecordModelAdapter extends TypeAdapter<ZakatRecordModel> {
     return ZakatRecordModel(
       id: fields[0] as String,
       calculationDate: fields[1] as DateTime,
-      assetsTotal: fields[2] as double,
-      receivablesTotal: fields[3] as double,
-      liabilitiesTotal: fields[4] as double,
-      netZakatableAmount: fields[5] as double,
-      zakatDue: fields[6] as double,
-      notes: fields[7] as String?,
-      createdAt: fields[8] as DateTime?,
-      updatedAt: fields[9] as DateTime?,
+      zakatYearStart: fields[2] as DateTime,
+      zakatYearEnd: fields[3] as DateTime,
+      assetsTotal: fields[4] as double,
+      receivablesTotal: fields[5] as double,
+      liabilitiesTotal: fields[6] as double,
+      netZakatableAmount: fields[7] as double,
+      zakatDue: fields[8] as double,
+      amountPaid: fields[9] as double,
+      isCurrent: fields[10] as bool,
+      notes: fields[11] as String?,
+      name: fields[14] as String,
+      createdAt: fields[12] as DateTime?,
+      updatedAt: fields[13] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ZakatRecordModel obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.calculationDate)
       ..writeByte(2)
-      ..write(obj.assetsTotal)
+      ..write(obj.zakatYearStart)
       ..writeByte(3)
-      ..write(obj.receivablesTotal)
+      ..write(obj.zakatYearEnd)
       ..writeByte(4)
-      ..write(obj.liabilitiesTotal)
+      ..write(obj.assetsTotal)
       ..writeByte(5)
-      ..write(obj.netZakatableAmount)
+      ..write(obj.receivablesTotal)
       ..writeByte(6)
-      ..write(obj.zakatDue)
+      ..write(obj.liabilitiesTotal)
       ..writeByte(7)
-      ..write(obj.notes)
+      ..write(obj.netZakatableAmount)
       ..writeByte(8)
-      ..write(obj.createdAt)
+      ..write(obj.zakatDue)
       ..writeByte(9)
+      ..write(obj.amountPaid)
+      ..writeByte(10)
+      ..write(obj.isCurrent)
+      ..writeByte(11)
+      ..write(obj.notes)
+      ..writeByte(14)
+      ..write(obj.name)
+      ..writeByte(12)
+      ..write(obj.createdAt)
+      ..writeByte(13)
       ..write(obj.updatedAt);
   }
 

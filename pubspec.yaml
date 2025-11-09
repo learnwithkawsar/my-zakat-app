@@ -56,6 +56,9 @@ dependencies:
   # Currency and date formatting
   intl: ^0.19.0
   
+  # Collection utilities
+  collection: ^1.18.0
+  
   # Export functionality
   csv: ^6.0.0
   pdf: ^3.10.7
